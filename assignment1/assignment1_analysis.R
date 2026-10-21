@@ -1,4 +1,3 @@
-.libPaths(c("../lab2/.r_libs", .libPaths()))
 library(tm)
 library(SnowballC)
 library(slam)
