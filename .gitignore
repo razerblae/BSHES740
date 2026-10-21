@@ -1,0 +1,34 @@
+.DS_Store
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+**/.r_libs/
+**/.python_libs/
+
+# Course materials and supplied datasets stay local.
+/lectures/
+/lab1/
+/lab2/
+/lab3/
+/lab4/
+/lab5/
+/TADA_Syllabus_Fall_2026_v25Aug.pdf
+/assignment1/Assignment1-2026.pdf
+/assignment1/TADA_A1_*.csv
+
+# This repository shares code; report files stay local.
+/assignment1/assignment1_report.*
+/assignment1/*.zip
+/assignment1/*.log
+/assignment1/*.tex
+/assignment1/*.knit.md
+/assignment1/*.utf8.md
+
+# Large generated tables and tweet-level records can be regenerated.
+/assignment1/results/english_tweet_flags.csv
+/assignment1/results/report_data.rds
+/assignment1/results/sessionInfo.txt
+/assignment1/results/*_bigrams.csv
+/assignment1/results/*_terms.csv
+!/assignment1/results/top_discussion_terms.csv

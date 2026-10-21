@@ -1,0 +1,4 @@
+"substance","pattern"
+"Methadone","\b(methadone|methadones|methadon|methadose)\b"
+"Suboxone","\b(suboxone|suboxones|suboxon|subox|subuxone)\b"
+"Fentanyl","\b(fentanyl|fentanyls|fentanil|fentanilo|fent)\b"
