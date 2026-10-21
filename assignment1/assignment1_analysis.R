@@ -1,6 +1,3 @@
-# Assignment 1: simple keyword matching and frequency analysis.
-# Run from assignment1: Rscript assignment1_analysis.R
-# Methods follow Labs 2, 4, and 5. No model training is used.
 .libPaths(c("../lab2/.r_libs", .libPaths()))
 library(tm)
 library(SnowballC)
@@ -11,8 +8,6 @@ dir.create("results", showWarnings = FALSE)
 dir.create("figures", showWarnings = FALSE)
 options(stringsAsFactors = FALSE)
 
-# One unquoted carriage return in set 2 otherwise creates an extra CSV row.
-# Convert standalone CRs to spaces; leave normal CRLF line endings alone.
 read_posts <- function(path, set_name) {
   raw <- readBin(path, "raw", n = file.info(path)$size)
   csv_text <- gsub("\r(?!\n)", " ", rawToChar(raw), perl = TRUE)
@@ -41,8 +36,6 @@ names(languages) <- c("language_code", "set", "posts")
 languages <- languages[languages$posts > 0, ]
 write.csv(languages, "results/languages.csv", row.names = FALSE)
 
-# Drop URLs and @handles BEFORE keyword matching. A handle such as
-# @Methadone_Cat alone should not make a tweet a methadone discussion.
 clean_for_matching <- function(x) {
   x <- tolower(x)
   x <- gsub("https?://\\S+|www\\.\\S+", " ", x, perl = TRUE)
@@ -61,9 +54,6 @@ for (drug in names(drug_patterns)) {
 write.csv(data.frame(substance = names(drug_patterns), pattern = drug_patterns),
           "results/keyword_rules.csv", row.names = FALSE)
 
-# Count tweets, once per substance, rather than repeated words in a tweet.
-# Categories can overlap. All-language counts are keyword hits, not validated
-# drug discussions: in particular, 'fent' is a common Catalan word.
 mention_counts <- do.call(rbind, lapply(c("All languages", "English"), function(scope) {
   d <- if (scope == "English") posts[posts$lang == "en", ] else posts
   do.call(rbind, lapply(c("Set 1", "Set 2"), function(s) {
@@ -75,7 +65,6 @@ mention_counts <- do.call(rbind, lapply(c("All languages", "English"), function(
 }))
 mention_counts$percent <- 100 * mention_counts$tweets / mention_counts$denominator
 write.csv(mention_counts, "results/mention_counts.csv", row.names = FALSE)
-# Show how much the ambiguous abbreviation changes the fentanyl counts.
 fentanyl_long <- "\\b(fentanyl|fentanyls|fentanil|fentanilo)\\b"
 fentanyl_sensitivity <- do.call(rbind, lapply(c("All languages", "English"), function(scope) {
   d <- if (scope == "English") posts[posts$lang == "en", ] else posts
@@ -93,8 +82,6 @@ write.csv(data.frame(id = english$id, set = english$set,
                     Fentanyl = english$Fentanyl),
           "results/english_tweet_flags.csv", row.names = FALSE)
 
-# Keep bare fentanyl separate from its named analogs. This is an explicit,
-# finite dictionary, not an exhaustive search for every possible analog.
 analog_patterns <- c(
   Carfentanil = "\\b(carfentanil|carfentanyl)\\b",
   Sufentanil = "\\b(sufentanil|sufentanyl)\\b",
@@ -114,8 +101,6 @@ analog_counts <- do.call(rbind, lapply(names(analog_patterns), function(a) {
 }))
 write.csv(analog_counts, "results/analog_counts.csv", row.names = FALSE)
 
-# Lab 2 preprocessing. Keep COVID words because they matter to this question.
-# Stemmed unigram counts describe common discussion words, not formal topics.
 corpus <- VCorpus(VectorSource(english$match_text))
 corpus <- tm_map(corpus, content_transformer(function(x) {
   x <- gsub("&amp;|&lt;|&gt;|&quot;|&#39;", " ", x)
@@ -124,8 +109,6 @@ corpus <- tm_map(corpus, content_transformer(function(x) {
 corpus <- tm_map(corpus, removeWords, c(stopwords("english"), "rt", "via"))
 corpus <- tm_map(corpus, stripWhitespace)
 
-# Lab 4 bigrams: adjacent retained words within a tweet, after stopword
-# removal. Keep full word forms for readable phrase labels.
 clean_text <- vapply(corpus, content, character(1))
 tokens <- lapply(strsplit(trimws(clean_text), "\\s+"),
                  function(x) x[nchar(x) >= 3])
@@ -143,7 +126,6 @@ count_bigrams <- function(token_list) {
 
 stemmed <- tm_map(corpus, stemDocument, language = "english")
 dtm <- DocumentTermMatrix(stemmed, control = list(wordLengths = c(3, Inf)))
-# Sparse column sums avoid converting a large matrix to a dense matrix.
 freq_table <- function(index) {
   values <- slam::col_sums(dtm[index, ])
   d <- data.frame(term = names(values), frequency = as.integer(values))
@@ -158,8 +140,6 @@ drug_stems <- unique(wordStem(c("methadone", "methadones", "methadon", "methados
                                "suboxone", "suboxones", "suboxon", "subox", "subuxone",
                                "fentanyl", "fentanyls", "fentanil", "fentanilo", "fent"),
                               language = "english"))
-# Only the topic summary omits these generic conversation words; saved term
-# frequencies, word clouds, and bigrams retain them.
 topic_exclusions <- c(drug_stems, wordStem(c(
   "get", "can", "use", "people", "like", "just", "take", "need", "one", "will",
   "dont", "know", "now", "make", "also", "time", "want", "say", "said", "good",
@@ -169,7 +149,6 @@ for (drug in names(drug_patterns)) {
   index <- which(english[[drug]])
   f <- freq_table(index)
   write.csv(f, paste0("results/", tolower(drug), "_terms.csv"), row.names = FALSE)
-  # Remove the three drug labels so they do not dominate the topic list.
   topic_tables[[drug]] <- head(f[!f$term %in% topic_exclusions, ], 10)
   bigrams[[drug]] <- count_bigrams(tokens[index])
   write.csv(bigrams[[drug]], paste0("results/", tolower(drug), "_bigrams.csv"),
@@ -194,8 +173,6 @@ period_topics <- do.call(rbind, lapply(names(drug_patterns), function(drug) {
 }))
 write.csv(period_topics, "results/discussion_terms_by_period.csv", row.names = FALSE)
 
-# A small, literal check for discussion of access, with the same words in
-# both periods. This is a word-occurrence summary, not an access classifier.
 access_words <- c("clinic", "treatment", "withdrawal", "take home", "covid", "coronavirus")
 access_patterns <- c("\\bclinics?\\b", "\\btreatments?\\b", "\\bwithdrawals?\\b",
                      "\\btake[ -]?homes?\\b", "\\bcovid(?:[ -]?19)?\\b", "\\bcoronavirus\\b")
@@ -210,7 +187,6 @@ access_counts <- do.call(rbind, lapply(c("Methadone", "Suboxone"), function(drug
 access_counts$percent <- 100 * access_counts$tweets / access_counts$denominator
 write.csv(access_counts, "results/access_word_counts.csv", row.names = FALSE)
 
-# Base R plots, as used in the labs.
 pdf("figures/wordclouds.pdf", width = 9, height = 4.8)
 par(mfrow = c(1, 2), mar = c(0, 0, 3, 0))
 set.seed(740)
